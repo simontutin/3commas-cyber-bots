@@ -40,6 +40,8 @@ def load_config():
         "botids": [12345, 67890],
         "numberofpairs": 10,
         "maxaltrankscore": 1500,
+        "maxvt": 0.05,
+        "minvt": 0.01,
         "3c-apikey": "Your 3Commas API Key",
         "3c-apisecret": "Your 3Commas API Secret",
         "lc-apikey": "Your LunarCrush API Key",
@@ -107,7 +109,9 @@ def lunarcrush_pairs(thebot):
             pair = format_pair(logger, marketcode, base, coin)
 
             acrscore = float(entry["acr"])
+            vt = float( entry["vt"])            
             volbtc = float(entry["volbtc"])
+
             if volbtc is None:
                 logger.debug("No valid 24h BTC volume for quote '%s', skipping" % coin)
                 continue
@@ -125,6 +129,21 @@ def lunarcrush_pairs(thebot):
                 logger.debug(
                     "Quote currency '%s' is not in AltRank score top %s (%s), skipping"
                     % (coin, maxacrscore, acrscore)
+                )
+                continue
+            
+            # Check if coin has minimum Volitility
+            if vt < minvt:
+                logger.debug(
+                    "Quote currency '%s' volitility is below minimum threshold %s (%s), skipping"
+                    % (coin, minvt, vt)
+                )
+                continue
+            # Check if coin has minimum Volitility
+            if vt > maxvt:
+                logger.debug(
+                    "Quote currency '%s' volitility is above maximimum threshold %s (%s), skipping"
+                    % (coin, maxvt, vt)
                 )
                 continue
 
@@ -241,6 +260,8 @@ while True:
     # Configuration settings
     numberofpairs = int(config.get("settings", "numberofpairs"))
     maxacrscore = int(config.get("settings", "maxaltrankscore", fallback=100))
+    minvt = float( config.get("settings", "minvt", fallback=0.0))
+    maxvt = float( config.get("settings", "maxvt", fallback=1.0))
     botids = json.loads(config.get("settings", "botids"))
     timeint = int(config.get("settings", "timeinterval"))
     lcapikey = config.get("settings", "lc-apikey")
